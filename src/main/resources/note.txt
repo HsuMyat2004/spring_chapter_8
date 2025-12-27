@@ -1,0 +1,124 @@
+Below is the **exact PRG (Post-Redirect-Get) flow**, showing **browser ↔ server interaction** step by step.
+
+---
+
+## 1️⃣ User submits the form (Browser → Server)
+
+**Browser**
+
+```
+POST /products
+Form data:
+- name=Phone
+- price=500
+```
+
+**Server (Spring MVC)**
+
+```java
+@PostMapping("/products")
+public String addNewProduct(Product product) {
+    productService.addProduct(product);
+    return "redirect:/products";
+}
+```
+
+---
+
+## 2️⃣ Server responds with REDIRECT (Server → Browser)
+
+**Server response**
+
+```
+HTTP/1.1 302 Found
+Location: /products
+```
+
+Meaning:
+
+> “I handled your POST. Now go to `/products`.”
+
+⚠️ No HTML page is sent here.
+
+---
+
+## 3️⃣ Browser automatically follows redirect (Browser → Server)
+
+**Browser**
+
+```
+GET /products
+```
+
+User does nothing. This is automatic browser behavior.
+
+---
+
+## 4️⃣ Server handles GET request (Server)
+
+```java
+@GetMapping("/products")
+public String getProducts(Model model) {
+    model.addAttribute("products", productService.findAll());
+    return "products";
+}
+```
+
+---
+
+## 5️⃣ Server returns the page (Server → Browser)
+
+**Server response**
+
+```
+HTTP/1.1 200 OK
+HTML page (products list)
+```
+
+---
+
+## 6️⃣ User refreshes the page (Browser → Server)
+
+**Browser**
+
+```
+GET /products
+```
+
+✔ Safe
+✔ No duplicate insert
+✔ No warning dialog
+
+---
+
+## What happens WITHOUT PRG (for comparison)
+
+```
+POST /products
+→ returns HTML directly
+→ refresh
+→ POST /products AGAIN ❌
+→ duplicate data
+```
+
+---
+
+## Why PRG works (core idea)
+
+* POST modifies data
+* Redirect clears POST state
+* GET only reads data
+* Browser refresh repeats **GET**, not POST
+
+---
+
+## Final summary
+
+```
+Browser: POST /products
+Server : save + 302 redirect
+Browser: GET /products
+Server : return page
+```
+
+This is **standard web behavior**, not Spring-specific.
